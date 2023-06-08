@@ -2,15 +2,14 @@
 
 package com.github.novelrt.fumocement;
 
-import com.github.novelrt.fumocement.builtin.Int32Pointer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 /**
  * Represents an indirected pointer of type {@code T}, which can be represented in C
- * as {@code T*}. For instance, putting a {@link Int32Pointer} will result in a
- * {@code int**} type.
+ * as {@code T*}. For instance, putting {@code MyStruct*} will result in a
+ * {@code MyStruct**} type.
  * <p>
  * This class uses a {@link NativeObjectProvider} to provide native objects
  * that consumes the underlying handle without owning it.

@@ -1,49 +1,54 @@
 // Copyright © Matt Jones and Contributors. Licensed under the MIT License (MIT). See LICENCE.md in the repository root for more information.
 
+
 package com.github.novelrt.fumocement.builtin;
 
-import com.github.novelrt.fumocement.DisposalMethod;
-import com.github.novelrt.fumocement.NativeObject;
-import com.github.novelrt.fumocement.Pointer;
+import com.github.novelrt.fumocement.memory.NativeMemory;
+import com.github.novelrt.fumocement.memory.NativeStack;
 
 /**
  * Represents a {@code float*} stored natively.
  */
-public final class FloatPointer extends NativeObject {
-    public FloatPointer() {
-        super(allocatePointer(), true, FloatPointer::destroyPointer);
+public sealed class FloatPointer {
+    public static final long SIZE = 4;
+
+    private final long address;
+
+    public FloatPointer(long address) {
+        this.address = address;
     }
 
-    public FloatPointer(DisposalMethod disposalMethod) {
-        super(allocatePointer(), true, disposalMethod, FloatPointer::destroyPointer);
+    public static StackAllocated allocate(NativeStack stack) {
+        return new StackAllocated(stack.allocateManual(SIZE), stack);
     }
 
-    public FloatPointer(long handle, boolean isOwned) {
-        super(handle, isOwned, FloatPointer::destroyPointer);
-    }
-
-    public FloatPointer(long handle, boolean isOwned, DisposalMethod disposalMethod) {
-        super(handle, isOwned, disposalMethod, FloatPointer::destroyPointer);
-    }
-
-    private static native long allocatePointer();
-
-    private static native void destroyPointer(long handle);
-
-    private static native float getValue(long handle);
-
-    private static native void setValue(long handle, float value);
-
-    @Override
-    public @Pointer("float*") long getHandle() {
-        return super.getHandle();
+    public static FloatPointer allocate(NativeStack.Scope scope) {
+        return new FloatPointer(scope.allocate(SIZE));
     }
 
     public float getValue() {
-        return getValue(getHandle());
+        return NativeMemory.access().getFloat(address);
     }
 
     public void setValue(float value) {
-        setValue(getHandle(), value);
+        NativeMemory.access().putFloat(address, value);
+    }
+
+    public long getAddress() {
+        return address;
+    }
+
+    public static final class StackAllocated extends FloatPointer implements AutoCloseable {
+        private final NativeStack stack;
+
+        private StackAllocated(long address, NativeStack stack) {
+            super(address);
+            this.stack = stack;
+        }
+
+        @Override
+        public void close() {
+            stack.freeManual(SIZE);
+        }
     }
 }

@@ -1,49 +1,54 @@
 // Copyright © Matt Jones and Contributors. Licensed under the MIT License (MIT). See LICENCE.md in the repository root for more information.
 
+
 package com.github.novelrt.fumocement.builtin;
 
-import com.github.novelrt.fumocement.DisposalMethod;
-import com.github.novelrt.fumocement.NativeObject;
-import com.github.novelrt.fumocement.Pointer;
+import com.github.novelrt.fumocement.memory.NativeMemory;
+import com.github.novelrt.fumocement.memory.NativeStack;
 
 /**
  * Represents a {@code int16_t*} stored natively.
  */
-public final class Int16Pointer extends NativeObject {
-    public Int16Pointer() {
-        super(allocatePointer(), true, Int16Pointer::destroyPointer);
+public sealed class Int16Pointer {
+    public static final long SIZE = 2;
+
+    private final long address;
+
+    public Int16Pointer(long address) {
+        this.address = address;
     }
 
-    public Int16Pointer(DisposalMethod disposalMethod) {
-        super(allocatePointer(), true, disposalMethod, Int16Pointer::destroyPointer);
+    public static StackAllocated allocate(NativeStack stack) {
+        return new StackAllocated(stack.allocateManual(SIZE), stack);
     }
 
-    public Int16Pointer(long handle, boolean isOwned) {
-        super(handle, isOwned, Int16Pointer::destroyPointer);
-    }
-
-    public Int16Pointer(long handle, boolean isOwned, DisposalMethod disposalMethod) {
-        super(handle, isOwned, disposalMethod, Int16Pointer::destroyPointer);
-    }
-
-    private static native long allocatePointer();
-
-    private static native void destroyPointer(long handle);
-
-    private static native short getValue(long handle);
-
-    private static native void setValue(long handle, short value);
-
-    @Override
-    public @Pointer("int16_t*") long getHandle() {
-        return super.getHandle();
+    public static Int16Pointer allocate(NativeStack.Scope scope) {
+        return new Int16Pointer(scope.allocate(SIZE));
     }
 
     public short getValue() {
-        return getValue(getHandle());
+        return NativeMemory.access().getShort(address);
     }
 
     public void setValue(short value) {
-        setValue(getHandle(), value);
+        NativeMemory.access().putShort(address, value);
+    }
+
+    public long getAddress() {
+        return address;
+    }
+
+    public static final class StackAllocated extends Int16Pointer implements AutoCloseable {
+        private final NativeStack stack;
+
+        private StackAllocated(long address, NativeStack stack) {
+            super(address);
+            this.stack = stack;
+        }
+
+        @Override
+        public void close() {
+            stack.freeManual(SIZE);
+        }
     }
 }

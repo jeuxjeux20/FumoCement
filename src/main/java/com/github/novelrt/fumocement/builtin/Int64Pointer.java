@@ -1,49 +1,54 @@
 // Copyright © Matt Jones and Contributors. Licensed under the MIT License (MIT). See LICENCE.md in the repository root for more information.
 
+
 package com.github.novelrt.fumocement.builtin;
 
-import com.github.novelrt.fumocement.DisposalMethod;
-import com.github.novelrt.fumocement.NativeObject;
-import com.github.novelrt.fumocement.Pointer;
+import com.github.novelrt.fumocement.memory.NativeMemory;
+import com.github.novelrt.fumocement.memory.NativeStack;
 
 /**
  * Represents a {@code int64_t*} stored natively.
  */
-public final class Int64Pointer extends NativeObject {
-    public Int64Pointer() {
-        super(allocatePointer(), true, Int64Pointer::destroyPointer);
+public sealed class Int64Pointer {
+    public static final long SIZE = 8;
+
+    private final long address;
+
+    public Int64Pointer(long address) {
+        this.address = address;
     }
 
-    public Int64Pointer(DisposalMethod disposalMethod) {
-        super(allocatePointer(), true, disposalMethod, Int64Pointer::destroyPointer);
+    public static StackAllocated allocate(NativeStack stack) {
+        return new StackAllocated(stack.allocateManual(SIZE), stack);
     }
 
-    public Int64Pointer(long handle, boolean isOwned) {
-        super(handle, isOwned, Int64Pointer::destroyPointer);
-    }
-
-    public Int64Pointer(long handle, boolean isOwned, DisposalMethod disposalMethod) {
-        super(handle, isOwned, disposalMethod, Int64Pointer::destroyPointer);
-    }
-
-    private static native long allocatePointer();
-
-    private static native void destroyPointer(long handle);
-
-    private static native long getValue(long handle);
-
-    private static native void setValue(long handle, long value);
-
-    @Override
-    public @Pointer("int_64t*") long getHandle() {
-        return super.getHandle();
+    public static Int64Pointer allocate(NativeStack.Scope scope) {
+        return new Int64Pointer(scope.allocate(SIZE));
     }
 
     public long getValue() {
-        return getValue(getHandle());
+        return NativeMemory.access().getLong(address);
     }
 
     public void setValue(long value) {
-        setValue(getHandle(), value);
+        NativeMemory.access().putLong(address, value);
+    }
+
+    public long getAddress() {
+        return address;
+    }
+
+    public static final class StackAllocated extends Int64Pointer implements AutoCloseable {
+        private final NativeStack stack;
+
+        private StackAllocated(long address, NativeStack stack) {
+            super(address);
+            this.stack = stack;
+        }
+
+        @Override
+        public void close() {
+            stack.freeManual(SIZE);
+        }
     }
 }

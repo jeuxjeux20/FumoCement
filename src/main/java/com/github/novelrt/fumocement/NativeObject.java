@@ -43,8 +43,11 @@ import java.util.List;
  * @see ResourceOwningState
  */
 public abstract class NativeObject implements AutoCloseable {
-    // TODO: Provide compatibility with Java 8 and stop using Cleaner.
+    // TO-NOT-DO: Provide compatibility with Java 8 and stop using Cleaner.
     // Update: Is this really necessary? We don't support Android now thanks to Vulkan 1.2.
+    // Update 2: This is wrong, and we do need to provide another kind of "cleaner".
+    // Update 3: We're using GraalVM Native Image for Android, which allows us to use modern
+    //           Java features, so there's surely no need to change the cleaner.
     private static final Cleaner NATIVE_OBJECTS_CLEANER = Cleaner.create();
 
     private final BaseState baseState;
@@ -125,6 +128,19 @@ public abstract class NativeObject implements AutoCloseable {
      */
     protected ResourceOwningState getResourceOwningState() {
         return baseState.resourceOwningState;
+    }
+
+    /**
+     * Moves the native resource's ownership from {@link ResourceOwningState#OWNED} to
+     * {@link ResourceOwningState#UNOWNED}.
+     *
+     * @throws IllegalStateException when the native resource isn't in an owned state
+     */
+    protected void move() {
+        if (baseState.resourceOwningState != ResourceOwningState.OWNED) {
+            throw new IllegalStateException("Cannot move an unowned native object.");
+        }
+        baseState.resourceOwningState = ResourceOwningState.UNOWNED;
     }
 
     protected void registerDeletionState(DeletionState deletionState) {
@@ -210,7 +226,7 @@ public abstract class NativeObject implements AutoCloseable {
             otherDeletionStates.add(deletionState);
         }
 
-        protected void deleteAllNativeResources() {
+        private void deleteAllNativeResources() {
             if (resourceOwningState == ResourceOwningState.OWNED) {
                 handleDeleter.deleteHandle(handle);
                 if (otherDeletionStates != null) {

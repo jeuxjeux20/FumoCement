@@ -3,18 +3,19 @@
 
 package com.github.novelrt.fumocement.builtin;
 
+import com.github.novelrt.fumocement.layout.NativeLayouts;
 import com.github.novelrt.fumocement.memory.NativeMemory;
 import com.github.novelrt.fumocement.memory.NativeStack;
 
 /**
- * Represents a {@code double*} stored natively.
+ * Represents a {@code intptr_t*} stored natively.
  */
-public sealed class DoublePointer {
-    public static final long SIZE = 8;
+public sealed class IntPtrPointer {
+    public static final long SIZE = NativeLayouts.CURRENT_PLATFORM.getPointer().size();
 
     private final long address;
 
-    public DoublePointer(long address) {
+    public IntPtrPointer(long address) {
         this.address = address;
     }
 
@@ -22,23 +23,23 @@ public sealed class DoublePointer {
         return new StackAllocated(stack.allocateManual(SIZE), stack);
     }
 
-    public static DoublePointer allocate(NativeStack.Scope scope) {
-        return new DoublePointer(scope.allocate(SIZE));
+    public static IntPtrPointer allocate(NativeStack.Scope scope) {
+        return new IntPtrPointer(scope.allocate(SIZE));
     }
 
-    public double getValue() {
-        return NativeMemory.access().getDouble(address);
+    public long getValue() {
+        return NativeMemory.access().getAddress(address);
     }
 
-    public void setValue(double value) {
-        NativeMemory.access().putDouble(address, value);
+    public void setValue(long value) {
+        NativeMemory.access().putAddress(address, value);
     }
 
     public long getAddress() {
         return address;
     }
 
-    public static final class StackAllocated extends DoublePointer implements AutoCloseable {
+    public static final class StackAllocated extends IntPtrPointer implements AutoCloseable {
         private final NativeStack stack;
 
         private StackAllocated(long address, NativeStack stack) {

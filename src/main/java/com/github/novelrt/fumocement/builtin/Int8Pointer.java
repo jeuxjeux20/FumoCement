@@ -3,48 +3,52 @@
 
 package com.github.novelrt.fumocement.builtin;
 
-import com.github.novelrt.fumocement.DisposalMethod;
-import com.github.novelrt.fumocement.NativeObject;
-import com.github.novelrt.fumocement.Pointer;
+import com.github.novelrt.fumocement.memory.NativeMemory;
+import com.github.novelrt.fumocement.memory.NativeStack;
 
 /**
  * Represents a {@code int8_t*} stored natively.
  */
-public final class Int8Pointer extends NativeObject {
-    public Int8Pointer() {
-        super(allocatePointer(), true, Int8Pointer::destroyPointer);
+public sealed class Int8Pointer {
+    public static final long SIZE = 1;
+
+    private final long address;
+
+    public Int8Pointer(long address) {
+        this.address = address;
     }
 
-    public Int8Pointer(DisposalMethod disposalMethod) {
-        super(allocatePointer(), true, disposalMethod, Int8Pointer::destroyPointer);
+    public static StackAllocated allocate(NativeStack stack) {
+        return new StackAllocated(stack.allocateManual(SIZE), stack);
     }
 
-    public Int8Pointer(long handle, boolean isOwned) {
-        super(handle, isOwned, Int8Pointer::destroyPointer);
-    }
-
-    public Int8Pointer(long handle, boolean isOwned, DisposalMethod disposalMethod) {
-        super(handle, isOwned, disposalMethod, Int8Pointer::destroyPointer);
-    }
-
-    private static native long allocatePointer();
-
-    private static native void destroyPointer(long handle);
-
-    private static native byte getValue(long handle);
-
-    private static native void setValue(long handle, byte value);
-
-    @Override
-    public @Pointer("int8_t*") long getHandle() {
-        return super.getHandle();
+    public static Int8Pointer allocate(NativeStack.Scope scope) {
+        return new Int8Pointer(scope.allocate(SIZE));
     }
 
     public byte getValue() {
-        return getValue(getHandle());
+        return NativeMemory.access().getByte(address);
     }
 
     public void setValue(byte value) {
-        setValue(getHandle(), value);
+        NativeMemory.access().putByte(address, value);
+    }
+
+    public long getAddress() {
+        return address;
+    }
+
+    public static final class StackAllocated extends Int8Pointer implements AutoCloseable {
+        private final NativeStack stack;
+
+        private StackAllocated(long address, NativeStack stack) {
+            super(address);
+            this.stack = stack;
+        }
+
+        @Override
+        public void close() {
+            stack.freeManual(SIZE);
+        }
     }
 }

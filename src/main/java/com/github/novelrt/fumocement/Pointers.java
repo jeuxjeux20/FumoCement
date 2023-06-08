@@ -2,6 +2,8 @@
 
 package com.github.novelrt.fumocement;
 
+import com.github.novelrt.fumocement.layout.NativeLayouts;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -14,21 +16,14 @@ public final class Pointers {
      * <p>
      * This value typically changes from 32-bit to 64-bit, and varies by the OS as well.
      */
-    public static final int UINTPTR_T_SIZE;
+    public static final int UINTPTR_T_SIZE = (int) NativeLayouts.CURRENT_PLATFORM.getPointer().size();
     /**
      * A {@code nullptr} whose value is 0.
      */
     public static final @Pointer long NULLPTR = 0;
 
-    static {
-        UINTPTR_T_SIZE = getNativeLongSize();
-    }
-
     private Pointers() {
     }
-
-    // This will be implemented in the generated methods as well.
-    private static native int getNativeLongSize();
 
     /**
      * Returns whether or not this pointer is null (= 0).
