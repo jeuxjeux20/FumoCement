@@ -117,4 +117,9 @@ public class UnsafeNativeMemoryAccessor implements NativeMemoryAccessor {
     public void copyMemory(long srcAddress, long destAddress, long bytes) {
         unsafe.copyMemory(srcAddress, destAddress, bytes);
     }
+
+    @Override
+    public void zeroMemory(long address, long bytes) {
+        unsafe.setMemory(address, bytes, (byte) 0);
+    }
 }

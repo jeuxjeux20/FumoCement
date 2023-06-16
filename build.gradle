@@ -5,7 +5,9 @@ plugins {
 }
 
 java {
-    modularity.inferModulePath = true
+    toolchain {
+        version = JavaLanguageVersion.of(17)
+    }
 }
 
 compileJava {

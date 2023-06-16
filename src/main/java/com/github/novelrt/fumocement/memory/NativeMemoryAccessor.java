@@ -158,6 +158,8 @@ public interface NativeMemoryAccessor {
 
     void copyMemory(@Pointer long srcAddress, @Pointer long destAddress, long bytes);
 
+    void zeroMemory(long address, long bytes);
+
     enum ImplementationPriority {
         UNSUPPORTED,
         NORMAL,

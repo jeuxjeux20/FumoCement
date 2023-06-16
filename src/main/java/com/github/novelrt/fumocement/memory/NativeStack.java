@@ -85,11 +85,13 @@ public class NativeStack extends NativeObject {
 
     public final Resource allocate(long size) {
         stackPointer -= size;
+        checkOverflow(size);
         return new Resource(stackPointer, size);
     }
 
     public final long allocateManual(long size) {
         stackPointer -= size;
+        checkOverflow(size);
         return stackPointer;
     }
 
@@ -109,6 +111,18 @@ public class NativeStack extends NativeObject {
         return startingAddress;
     }
 
+    private void checkOverflow(long allocSize) {
+        assert stackPointer >= getHandleUnsafe() :
+                "Stack overflow while allocating " + allocSize + " bytes. " +
+                "The stack size is " + getSize() + " bytes.\n" +
+                "There can be multiple reasons as to why this happened:\n" +
+                "   - You may have allocated too much memory in a very large stack scope.\n" +
+                "     Consider splitting your code into smaller scopes.\n\n" +
+                "   - You may have forgotten to free up memory using the allocate/free methods.\n\n" +
+                "   - The stack is simply too small for the amount of memory you're allocating.\n" +
+                "     Consider increasing the stack size using the novelrt.fumocement.stack.size system property.\n";
+    }
+
     public final class Scope implements AutoCloseable {
         private long offset;
 
@@ -118,7 +132,13 @@ public class NativeStack extends NativeObject {
         public long allocate(long size) {
             stackPointer -= size;
             offset += size;
+
+            checkOverflow(size);
             return stackPointer;
+        }
+
+        public NativeStack getStack() {
+            return NativeStack.this;
         }
 
         @Override
